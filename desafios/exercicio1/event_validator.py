@@ -3,6 +3,58 @@ import boto3
 
 _SQS_CLIENT = None
 
+def load_schema():
+    '''
+     Responsável pela leitura do schema
+    :param: None
+    :return: dict
+    '''
+
+    with open('schema.json', 'r') as file:
+        schema_str = file.read()
+    return json.loads(schema_str)
+
+def validate_field_type(field_type, value):
+    '''
+    # Função que compara um tipo do Python e um objeto 
+    :param field_type: Tipo do campo no schema (type)
+    :param value: Valor do campo no evento (int, str, bool, object)
+    :return: bool
+    '''
+
+    match field_type:
+        case 'integer':
+            return isinstance(value, int)
+        case 'string':
+            return isinstance(value, str)
+        case 'boolean':
+            return isinstance(value, bool)
+        case 'object':
+            return isinstance(value, object)
+        case _:
+            return True
+
+
+def validate_event(event, schema):
+    '''
+    # Valida se todos os campos do evento estão cadastrados 
+     no schema e se correspondem às definições dos schema
+    :param event: Evento  (dict)
+    :param schema: Schema (dict)
+    :return: bool
+    '''
+
+    for field in event:
+        if field not in schema['properties'].keys():
+            return False
+    for field, value in schema['properties'].items():
+        if field not in event or not validate_field_type(value['type'], event[field]):
+            return false
+        # print(field)
+        if isinstance(event[field], dict):
+            return validate_event(event[field], schema['properties'][field])
+    return True
+
 def send_event_to_queue(event, queue_name):
     '''
      Responsável pelo envio do evento para uma fila
@@ -24,9 +76,13 @@ def send_event_to_queue(event, queue_name):
 
 def handler(event):
     '''
-    #  Função principal que é sensibilizada para cada evento
-    Aqui você deve começar a implementar o seu código
-    Você pode criar funções/classes à vontade
-    Utilize a função send_event_to_queue para envio do evento para a fila,
-        não é necessário alterá-la
+     Responsável pela checagem e preparação para o envio do evento
+    :param event: Evento  (dict)
+    :return: None
     '''
+
+    schema = load_schema()
+    if validate_event(event, schema):
+        send_event_to_queue(event, 'valid-events-queue')
+    else:
+        print('Error: event does not match the schema')
