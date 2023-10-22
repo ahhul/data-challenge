@@ -3,14 +3,14 @@ import boto3
 
 _SQS_CLIENT = None
 
-def load_schema():
+def load_schema(path):
     '''
      Responsável pela leitura do schema
-    :param: None
+    :param path: Caminho para arquivo json (str)
     :return: dict
     '''
 
-    with open('schema.json', 'r') as file:
+    with open(path, 'r') as file:
         schema_str = file.read()
     return json.loads(schema_str)
 
@@ -45,14 +45,14 @@ def validate_event(event, schema):
     '''
 
     for field in event:
-        if field not in schema['properties'].keys():
+        if field not in schema["properties"].keys():
             return False
-    for field, value in schema['properties'].items():
-        if field not in event or not validate_field_type(value['type'], event[field]):
+    for field, value in schema["properties"].items():
+        if field not in event or not validate_field_type(value["type"], event[field]):
             return false
         # print(field)
         if isinstance(event[field], dict):
-            return validate_event(event[field], schema['properties'][field])
+            return validate_event(event[field], schema["properties"][field])
     return True
 
 def send_event_to_queue(event, queue_name):
@@ -67,7 +67,7 @@ def send_event_to_queue(event, queue_name):
     response = sqs_client.get_queue_url(
         QueueName=queue_name
     )
-    queue_url = response['QueueUrl']
+    queue_url = response["QueueUrl"]
     response = sqs_client.send_message(
         QueueUrl=queue_url,
         MessageBody=json.dumps(event)
@@ -81,8 +81,8 @@ def handler(event):
     :return: None
     '''
 
-    schema = load_schema()
+    schema = load_schema("schema.json")
     if validate_event(event, schema):
-        send_event_to_queue(event, 'valid-events-queue')
+        send_event_to_queue(event, "valid-events-queue")
     else:
-        print('Error: event does not match the schema')
+        print("Error: event does not match the schema")
