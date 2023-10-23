@@ -80,7 +80,7 @@ def handler():
     table_metadata = {
         "schema": schema,
         "name": "cliente",
-        "location": "s3a:bucket_name",
+        "location": "s3a://bucket_name/path",
         "storage_format":"PARQUET",
         "partition": None,
         "row_format": "SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'",

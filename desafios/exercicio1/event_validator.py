@@ -34,7 +34,6 @@ def validate_field_type(field_type, value):
         case _:
             return True
 
-
 def validate_event(event, schema):
     '''
     # Valida se todos os campos do evento estão cadastrados 
